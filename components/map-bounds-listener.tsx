@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useMap, useMapEvents } from "react-leaflet";
-import { boundsAroundPoint, boundsFromLeafletBounds, type BoundsQuery } from "@/lib/aviation";
+import { boundsFromLeafletBounds, type BoundsQuery } from "@/lib/aviation";
 
 type MapBoundsListenerProps = {
   center: {
@@ -27,15 +27,15 @@ export default function MapBoundsListener({
   });
 
   useEffect(() => {
+    onBoundsChange(boundsFromLeafletBounds(map.getBounds()));
+  }, [map, onBoundsChange]);
+
+  useEffect(() => {
     map.flyTo(center, Math.max(map.getZoom(), 8), {
       animate: true,
       duration: 1.2,
     });
   }, [center, map, recenterRequestId]);
-
-  useEffect(() => {
-    onBoundsChange(boundsAroundPoint(center.lat, center.lng, 1.1, 1.45));
-  }, [center, onBoundsChange]);
 
   return null;
 }

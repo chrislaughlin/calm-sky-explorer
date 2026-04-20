@@ -1,0 +1,12 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - main [ref=e12]:
+    - generic [ref=e14]:
+      - generic [ref=e16]:
+        - paragraph [ref=e17]: Calm Sky Explorer
+        - heading "Find the quiet answer to where that plane is headed." [level=1] [ref=e18]
+      - button "Return to my location" [ref=e19]:
+        - img [ref=e20]
+      - generic [ref=e26]: Loading nearby aircraft

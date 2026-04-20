@@ -7,7 +7,7 @@ import MapBoundsListener from "@/components/map-bounds-listener";
 import {
   FALLBACK_BOUNDS,
   FALLBACK_CENTER,
-  boundsAroundPoint,
+  centerFromBounds,
   formatAirlineLabel,
   formatDistanceKm,
   formatRelativeTime,
@@ -17,6 +17,7 @@ import {
   type BoundsQuery,
   type Plane,
   type PlaneApiResponse,
+  viewportBucketForBounds,
 } from "@/lib/aviation";
 import type {
   AirportWeatherIcon,
@@ -122,6 +123,10 @@ function statusCopy(
 ) {
   if (fetchStatus === "loading") {
     return "Loading nearby aircraft";
+  }
+
+  if (fetchStatus === "refreshing") {
+    return "Refreshing nearby aircraft";
   }
 
   if (locationStatus === "locating") {
@@ -266,8 +271,11 @@ export default function CalmSkyExplorer() {
   const [routeWeather, setRouteWeather] = useState<RouteWeatherResult | null>(null);
   const [routeWeatherKey, setRouteWeatherKey] = useState<string | null>(null);
   const [routeWeatherErrorKey, setRouteWeatherErrorKey] = useState<string | null>(null);
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
   const autoSelectionHappened = useRef(false);
+  const inflightViewportKeyRef = useRef<string | null>(null);
+  const latestViewportKeyRef = useRef<string>(viewportBucketForBounds(FALLBACK_BOUNDS).key);
 
   const closeSelectedPlane = useCallback(() => {
     setSelectedPlaneId(null);
@@ -291,7 +299,7 @@ export default function CalmSkyExplorer() {
         setLocationStatus("granted");
         setUserLocation(nextCenter);
         setCenter(nextCenter);
-        setBounds(boundsAroundPoint(nextCenter.lat, nextCenter.lng, 1.1, 1.45));
+        setRecenterRequestId((current) => current + 1);
       },
       () => {
         setLocationStatus("denied");
@@ -314,16 +322,32 @@ export default function CalmSkyExplorer() {
     };
   }, [requestLocation]);
 
+  const activeViewport = useMemo(() => viewportBucketForBounds(bounds), [bounds]);
+  const viewportCenter = useMemo(
+    () => centerFromBounds(activeViewport.bounds),
+    [activeViewport.key]
+  );
+
   const rankedPlanes = useMemo(() => {
     return [...planes]
       .filter(isLikelyAirbornePlane)
       .sort(
         (left, right) =>
-          haversineKm(center.lat, center.lng, left.latitude, left.longitude) -
-          haversineKm(center.lat, center.lng, right.latitude, right.longitude)
+          haversineKm(
+            viewportCenter.lat,
+            viewportCenter.lng,
+            left.latitude,
+            left.longitude
+          ) -
+          haversineKm(
+            viewportCenter.lat,
+            viewportCenter.lng,
+            right.latitude,
+            right.longitude
+          )
       )
       .slice(0, MAX_MARKERS);
-  }, [center.lat, center.lng, planes]);
+  }, [planes, viewportCenter.lat, viewportCenter.lng]);
 
   const selectedPlane = useMemo(() => {
     return rankedPlanes.find((plane) => plane.id === selectedPlaneId) ?? null;
@@ -348,6 +372,23 @@ export default function CalmSkyExplorer() {
     selectedRouteKey != null &&
     routeWeatherKey !== selectedRouteKey &&
     routeWeatherErrorKey !== selectedRouteKey;
+
+  useEffect(() => {
+    latestViewportKeyRef.current = activeViewport.key;
+  }, [activeViewport.key]);
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsPageVisible(document.visibilityState !== "hidden");
+    };
+
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", updateVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const originAirportCode = selectedPlane?.origin;
@@ -406,13 +447,21 @@ export default function CalmSkyExplorer() {
   }, [selectedPlane?.destination, selectedPlane?.origin]);
 
   const fetchPlanes = useEffectEvent(async (activeBounds: BoundsQuery) => {
+    const activeViewport = viewportBucketForBounds(activeBounds);
+    const requestKey = activeViewport.key;
+
+    if (inflightViewportKeyRef.current === requestKey) {
+      return;
+    }
+
+    inflightViewportKeyRef.current = requestKey;
     setFetchStatus((current) => (current === "ready" ? "refreshing" : "loading"));
 
     const params = new URLSearchParams({
-      north: activeBounds.north.toString(),
-      south: activeBounds.south.toString(),
-      east: activeBounds.east.toString(),
-      west: activeBounds.west.toString(),
+      north: activeViewport.bounds.north.toString(),
+      south: activeViewport.bounds.south.toString(),
+      east: activeViewport.bounds.east.toString(),
+      west: activeViewport.bounds.west.toString(),
     });
 
     try {
@@ -427,13 +476,28 @@ export default function CalmSkyExplorer() {
 
       const payload = (await response.json()) as PlaneApiResponse;
       const nextPlanes = payload.planes;
+
+      if (latestViewportKeyRef.current !== requestKey) {
+        return;
+      }
+
       const nearestPlaneId =
         [...nextPlanes]
           .filter(isLikelyAirbornePlane)
           .sort(
             (left, right) =>
-              haversineKm(center.lat, center.lng, left.latitude, left.longitude) -
-              haversineKm(center.lat, center.lng, right.latitude, right.longitude)
+              haversineKm(
+                viewportCenter.lat,
+                viewportCenter.lng,
+                left.latitude,
+                left.longitude
+              ) -
+              haversineKm(
+                viewportCenter.lat,
+                viewportCenter.lng,
+                right.latitude,
+                right.longitude
+              )
           )[0]?.id ??
         nextPlanes[0]?.id ??
         null;
@@ -457,27 +521,46 @@ export default function CalmSkyExplorer() {
 
       setFetchStatus("ready");
     } catch {
-      setFetchStatus("error");
+      if (latestViewportKeyRef.current === requestKey) {
+        setFetchStatus("error");
+      }
+    } finally {
+      if (inflightViewportKeyRef.current === requestKey) {
+        inflightViewportKeyRef.current = null;
+      }
     }
   });
 
   useEffect(() => {
+    if (!isPageVisible) {
+      return;
+    }
+
     const initialFetch = window.setTimeout(() => {
-      void fetchPlanes(bounds);
+      void fetchPlanes(activeViewport.bounds);
     }, 0);
 
     const interval = window.setInterval(() => {
-      void fetchPlanes(bounds);
+      void fetchPlanes(activeViewport.bounds);
     }, REFRESH_INTERVAL_MS);
 
     return () => {
       window.clearTimeout(initialFetch);
       window.clearInterval(interval);
     };
-  }, [bounds]);
+  }, [activeViewport.key, isPageVisible]);
 
   const handleBoundsChange = useCallback((nextBounds: BoundsQuery) => {
-    setBounds(nextBounds);
+    setBounds((current) => {
+      const currentKey = viewportBucketForBounds(current).key;
+      const nextKey = viewportBucketForBounds(nextBounds).key;
+
+      if (currentKey === nextKey) {
+        return current;
+      }
+
+      return nextBounds;
+    });
   }, []);
 
   const handlePlaneSelect = useCallback((planeId: string) => {
@@ -491,7 +574,6 @@ export default function CalmSkyExplorer() {
     }
 
     setCenter(userLocation);
-    setBounds(boundsAroundPoint(userLocation.lat, userLocation.lng, 1.1, 1.45));
     setRecenterRequestId((current) => current + 1);
   }, [requestLocation, userLocation]);
 

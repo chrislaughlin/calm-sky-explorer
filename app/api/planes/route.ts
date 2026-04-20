@@ -9,11 +9,12 @@ import {
   normalizeOpenSkyStates,
   radiusNmFromBounds,
   sanitizeBounds,
-  serializeBounds,
+  viewportBucketForBounds,
   type BoundsQuery,
   type FlightDataProvider,
   type Plane,
   type PlaneApiResponse,
+  type ViewportBucket,
 } from "@/lib/aviation";
 
 export const runtime = "nodejs";
@@ -24,11 +25,11 @@ const OPENSKY_TOKEN_URL =
   "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token";
 const ADSB_LOL_URL = "https://api.adsb.lol";
 const ADSB_FI_URL = "https://opendata.adsb.fi/api";
-const RESPONSE_CACHE_TTL_MS = 15_000;
+const RESPONSE_CACHE_TTL_MS = 20_000;
 const PROVIDER_CACHE_TTL_MS: Record<FlightDataProvider, number> = {
   opensky: 20_000,
-  adsblol: 15_000,
-  adsbfi: 15_000,
+  adsblol: 20_000,
+  adsbfi: 20_000,
 };
 const PROVIDER_BACKOFF_MS: Record<FlightDataProvider, number> = {
   opensky: 60_000,
@@ -89,19 +90,19 @@ function parseBounds(request: NextRequest): BoundsQuery {
   return sanitizeBounds({ north, south, east, west });
 }
 
-function getCacheKey(bounds: BoundsQuery) {
-  return JSON.stringify(serializeBounds(bounds));
+function getCacheKey(viewport: ViewportBucket) {
+  return viewport.key;
 }
 
-function getProviderCacheKey(provider: FlightDataProvider, bounds: BoundsQuery) {
+function getProviderCacheKey(provider: FlightDataProvider, viewport: ViewportBucket) {
   return JSON.stringify({
     provider,
-    bounds: getCacheKey(bounds),
+    viewport: viewport.key,
   });
 }
 
 function withMeta(
-  bounds: BoundsQuery,
+  viewport: ViewportBucket,
   planes: PlaneApiResponse["planes"],
   {
     cached,
@@ -118,7 +119,7 @@ function withMeta(
   return {
     planes,
     meta: {
-      bbox: serializeBounds(bounds),
+      bbox: viewport.bounds,
       cached,
       stale,
       fetchedAt: new Date().toISOString(),
@@ -302,9 +303,9 @@ function describeRateLimitStrategy(provider: FlightDataProvider) {
 
 async function fetchProviderData(
   provider: FlightDataProvider,
-  bounds: BoundsQuery
+  viewport: ViewportBucket
 ): Promise<ProviderFetchResult> {
-  const cacheKey = getProviderCacheKey(provider, bounds);
+  const cacheKey = getProviderCacheKey(provider, viewport);
   const now = Date.now();
   const cachedEntry = providerCache.get(cacheKey);
 
@@ -340,7 +341,7 @@ async function fetchProviderData(
 
   const requestPromise = (async () => {
     try {
-      const response = await fetchProviderResponse(provider, bounds);
+      const response = await fetchProviderResponse(provider, viewport.bounds);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -418,7 +419,8 @@ function sortPlanesByFreshness(planes: Plane[]) {
 
 export async function GET(request: NextRequest) {
   const bounds = parseBounds(request);
-  const cacheKey = getCacheKey(bounds);
+  const viewport = viewportBucketForBounds(bounds);
+  const cacheKey = getCacheKey(viewport);
   const now = Date.now();
   const cachedEntry = responseCache.get(cacheKey);
 
@@ -435,7 +437,7 @@ export async function GET(request: NextRequest) {
   }
 
   const providerResults = await Promise.all(
-    ALL_PROVIDERS.map((provider) => fetchProviderData(provider, bounds))
+    ALL_PROVIDERS.map((provider) => fetchProviderData(provider, viewport))
   );
   const mergedPlanes = sortPlanesByFreshness(
     mergePlanes(providerResults.flatMap((result) => result.planes))
@@ -475,7 +477,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = withMeta(bounds, mergedPlanes, {
+  const result = withMeta(viewport, mergedPlanes, {
     cached: false,
     stale: responseIsStale,
     error,
@@ -490,7 +492,7 @@ export async function GET(request: NextRequest) {
   return Response.json(result, {
     headers: {
       ...JSON_HEADERS,
-      "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30",
+      "Cache-Control": "public, s-maxage=20, stale-while-revalidate=20",
     },
   });
 }

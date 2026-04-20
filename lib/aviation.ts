@@ -34,6 +34,14 @@ export type BoundsQuery = {
   west: number;
 };
 
+export type ViewportBucketTier = "wide" | "mid" | "near" | "close";
+
+export type ViewportBucket = {
+  bounds: BoundsQuery;
+  key: string;
+  tier: ViewportBucketTier;
+};
+
 export type Plane = {
   id: string;
   icao24: string;
@@ -182,6 +190,14 @@ function round(value: number, digits = 4) {
   return Number(value.toFixed(digits));
 }
 
+function roundUpToStep(value: number, step: number) {
+  return Math.ceil(value / step) * step;
+}
+
+function roundDownToStep(value: number, step: number) {
+  return Math.floor(value / step) * step;
+}
+
 function normalizeProviderNow(value: number | undefined) {
   if (value == null) {
     return Math.floor(Date.now() / 1000);
@@ -322,6 +338,60 @@ export function boundsFromLeafletBounds(bounds: LatLngBounds) {
     east: bounds.getEast(),
     west: bounds.getWest(),
   });
+}
+
+function viewportBucketTierForBounds(bounds: BoundsQuery): {
+  tier: ViewportBucketTier;
+  step: number;
+} {
+  const halfLat = Math.abs(bounds.north - bounds.south) / 2;
+  const halfLng = Math.abs(bounds.east - bounds.west) / 2;
+  const maxHalfSpan = Math.max(halfLat, halfLng);
+
+  if (maxHalfSpan >= 1.6) {
+    return {
+      tier: "wide",
+      step: 1,
+    };
+  }
+
+  if (maxHalfSpan >= 0.9) {
+    return {
+      tier: "mid",
+      step: 0.5,
+    };
+  }
+
+  if (maxHalfSpan >= 0.45) {
+    return {
+      tier: "near",
+      step: 0.25,
+    };
+  }
+
+  return {
+    tier: "close",
+    step: 0.1,
+  };
+}
+
+export function viewportBucketForBounds(bounds: BoundsQuery): ViewportBucket {
+  const tier = viewportBucketTierForBounds(bounds);
+  const bucketBounds = sanitizeBounds({
+    north: round(roundUpToStep(bounds.north, tier.step), 4),
+    south: round(roundDownToStep(bounds.south, tier.step), 4),
+    east: round(roundUpToStep(bounds.east, tier.step), 4),
+    west: round(roundDownToStep(bounds.west, tier.step), 4),
+  });
+
+  return {
+    tier: tier.tier,
+    bounds: bucketBounds,
+    key: JSON.stringify({
+      tier: tier.tier,
+      bounds: serializeBounds(bucketBounds),
+    }),
+  };
 }
 
 export function centerFromBounds(bounds: BoundsQuery) {
