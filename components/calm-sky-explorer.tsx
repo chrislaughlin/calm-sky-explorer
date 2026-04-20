@@ -117,33 +117,6 @@ function formatSpeed(plane: Plane) {
   return `${plane.speedKts.toLocaleString()} kt`;
 }
 
-function statusCopy(
-  locationStatus: LocationStatus,
-  fetchStatus: FetchStatus
-) {
-  if (fetchStatus === "loading") {
-    return "Loading nearby aircraft";
-  }
-
-  if (fetchStatus === "refreshing") {
-    return "Refreshing nearby aircraft";
-  }
-
-  if (locationStatus === "locating") {
-    return "Centering on your location";
-  }
-
-  if (locationStatus === "denied") {
-    return "Location is off, showing a sample sky";
-  }
-
-  if (locationStatus === "unsupported") {
-    return "Geolocation is unavailable on this device";
-  }
-
-  return "Nearby live aircraft";
-}
-
 function WeatherGlyph({ icon }: { icon: AirportWeatherIcon }) {
   switch (icon) {
     case "sun":
@@ -260,10 +233,9 @@ export default function CalmSkyExplorer() {
   const [center, setCenter] = useState(FALLBACK_CENTER);
   const [bounds, setBounds] = useState<BoundsQuery>(FALLBACK_BOUNDS);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
-  const [fetchStatus, setFetchStatus] = useState<FetchStatus>("idle");
+  const [, setFetchStatus] = useState<FetchStatus>("idle");
   const [planes, setPlanes] = useState<Plane[]>([]);
   const [selectedPlaneId, setSelectedPlaneId] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [recenterRequestId, setRecenterRequestId] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
     null
@@ -504,7 +476,6 @@ export default function CalmSkyExplorer() {
 
       startTransition(() => {
         setPlanes(nextPlanes);
-        setLastUpdated(payload.meta.fetchedAt);
         setSelectedPlaneId((current) => {
           if (current && nextPlanes.some((plane) => plane.id === current)) {
             return current;
@@ -583,12 +554,14 @@ export default function CalmSkyExplorer() {
 
       <section className="absolute inset-x-0 top-0 z-[500] mx-auto flex w-full max-w-screen-sm flex-col gap-3 px-4 pt-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="max-w-[15rem] rounded-[1.65rem] border border-white/80 bg-white/92 px-4 py-3 shadow-[0_14px_34px_rgba(106,137,181,0.12)] md:bg-white/80 md:backdrop-blur-xl">
+            <div className="max-w-[14.5rem] rounded-[1.65rem] border border-white/80 bg-white/92 px-3.5 py-2.5 shadow-[0_14px_34px_rgba(106,137,181,0.12)] md:bg-white/80 md:backdrop-blur-xl">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.26em] text-sky-700">
                 Calm Sky Explorer
               </p>
-              <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-                Find the quiet answer to where that plane is headed.
+              <h1 className="mt-2 text-[1.35rem] font-semibold leading-[1.08] tracking-tight text-slate-950">
+                Find the quiet answer
+                <br />
+                to where that plane is headed.
               </h1>
             </div>
           </div>
@@ -603,11 +576,6 @@ export default function CalmSkyExplorer() {
             <CompassIcon />
           </button>
 
-        <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full border border-white/80 bg-white/92 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-[0_12px_28px_rgba(122,150,194,0.12)] md:bg-white/80 md:backdrop-blur-xl">
-          <span className="h-2 w-2 rounded-full bg-sky-400" />
-          <span>{statusCopy(locationStatus, fetchStatus)}</span>
-          {lastUpdated ? <span>• updated {formatRelativeTime(lastUpdated)}</span> : null}
-        </div>
       </section>
 
       <div className="absolute inset-0">
