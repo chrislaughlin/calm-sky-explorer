@@ -18,6 +18,11 @@ import {
   type Plane,
   type PlaneApiResponse,
 } from "@/lib/aviation";
+import type {
+  AirportWeatherIcon,
+  AirportWeatherSnapshot,
+  RouteWeatherResult,
+} from "@/lib/route-weather";
 
 type LocationStatus = "idle" | "locating" | "granted" | "denied" | "unsupported";
 type FetchStatus = "idle" | "loading" | "refreshing" | "ready" | "error";
@@ -134,6 +139,118 @@ function statusCopy(
   return "Nearby live aircraft";
 }
 
+function WeatherGlyph({ icon }: { icon: AirportWeatherIcon }) {
+  switch (icon) {
+    case "sun":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <circle cx="12" cy="12" r="4" fill="currentColor" />
+          <path d="M12 1.75v3.1M12 19.15v3.1M1.75 12h3.1M19.15 12h3.1M4.48 4.48l2.2 2.2M17.32 17.32l2.2 2.2M19.52 4.48l-2.2 2.2M6.68 17.32l-2.2 2.2" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+        </svg>
+      );
+    case "cloud-sun":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <circle cx="9" cy="9" r="3" fill="currentColor" />
+          <path d="M5.5 14.5h9.2a3.3 3.3 0 0 0 .2-6.6 5.6 5.6 0 0 0-10.5 1.4A3 3 0 0 0 5.5 14.5Z" fill="currentColor" opacity="0.9" />
+        </svg>
+      );
+    case "cloud":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <path d="M7.4 17.5h9.7a3.9 3.9 0 0 0 .3-7.8 5.6 5.6 0 0 0-10.8 1.6 3.2 3.2 0 0 0 .8 6.2Z" fill="currentColor" />
+        </svg>
+      );
+    case "rain":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <path d="M7.4 13.5h9.7a3.9 3.9 0 0 0 .3-7.8 5.6 5.6 0 0 0-10.8 1.6 3.2 3.2 0 0 0 .8 6.2Z" fill="currentColor" />
+          <path d="M8 16.5v2.2M12 16.5v2.2M16 16.5v2.2" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+        </svg>
+      );
+    case "snow":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <path d="M7.4 13.5h9.7a3.9 3.9 0 0 0 .3-7.8 5.6 5.6 0 0 0-10.8 1.6 3.2 3.2 0 0 0 .8 6.2Z" fill="currentColor" />
+          <path d="M12 16.4v3.2M10.5 17.2l3 1.4M13.5 17.2l-3 1.4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+        </svg>
+      );
+    case "storm":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <path d="M7.4 13.5h9.7a3.9 3.9 0 0 0 .3-7.8 5.6 5.6 0 0 0-10.8 1.6 3.2 3.2 0 0 0 .8 6.2Z" fill="currentColor" />
+          <path d="M11 15.5h2l-1 3h2" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
+        </svg>
+      );
+    case "fog":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <path d="M7.4 11.5h9.7a3.9 3.9 0 0 0 .3-7.8 5.6 5.6 0 0 0-10.8 1.6 3.2 3.2 0 0 0 .8 6.2Z" fill="currentColor" />
+          <path d="M5 16h14M6.5 19h11" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+        </svg>
+      );
+    default:
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <circle cx="12" cy="12" r="6" fill="currentColor" opacity="0.5" />
+        </svg>
+      );
+  }
+}
+
+function WeatherRow({
+  label,
+  airport,
+  loading,
+}: {
+  label: string;
+  airport: AirportWeatherSnapshot | null;
+  loading?: boolean;
+}) {
+  const icon = airport?.icon ?? "unknown";
+
+  return (
+    <div className="rounded-[1.2rem] border border-slate-200/75 bg-white/82 p-3 shadow-[0_10px_24px_rgba(122,150,194,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[0.66rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            {label}
+          </p>
+          <div className="mt-1 truncate text-sm font-semibold text-slate-900">
+            {loading ? (
+              <span className="inline-block h-4 w-36 animate-pulse rounded-full bg-slate-200/80" />
+            ) : (
+              <span>
+                {airport?.name ?? "Airport unavailable"}{" "}
+                <span className="font-normal text-slate-500">
+                  ({airport?.airportCode ?? "—"})
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1 text-slate-600">
+          {loading ? (
+            <span className="h-4 w-4 animate-pulse rounded-full bg-slate-200/80" />
+          ) : (
+            <WeatherGlyph icon={icon} />
+          )}
+          <span className="text-xs font-medium uppercase tracking-[0.18em]">
+            {loading ? "..." : icon}
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        {loading ? (
+          <span className="inline-block h-4 w-48 animate-pulse rounded-full bg-slate-200/80" />
+        ) : (
+          airport?.summary ?? "Weather unavailable"
+        )}
+      </p>
+    </div>
+  );
+}
+
 export default function CalmSkyExplorer() {
   const [center, setCenter] = useState(FALLBACK_CENTER);
   const [bounds, setBounds] = useState<BoundsQuery>(FALLBACK_BOUNDS);
@@ -146,8 +263,15 @@ export default function CalmSkyExplorer() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
+  const [routeWeather, setRouteWeather] = useState<RouteWeatherResult | null>(null);
+  const [routeWeatherKey, setRouteWeatherKey] = useState<string | null>(null);
+  const [routeWeatherErrorKey, setRouteWeatherErrorKey] = useState<string | null>(null);
 
   const autoSelectionHappened = useRef(false);
+
+  const closeSelectedPlane = useCallback(() => {
+    setSelectedPlaneId(null);
+  }, []);
 
   const requestLocation = useCallback(() => {
     if (!("geolocation" in navigator)) {
@@ -204,6 +328,82 @@ export default function CalmSkyExplorer() {
   const selectedPlane = useMemo(() => {
     return rankedPlanes.find((plane) => plane.id === selectedPlaneId) ?? null;
   }, [rankedPlanes, selectedPlaneId]);
+
+  const originWeather =
+    selectedPlane?.origin &&
+    routeWeather?.origin?.airportCode === selectedPlane.origin
+      ? routeWeather.origin
+      : null;
+
+  const destinationWeather =
+    selectedPlane?.destination &&
+    routeWeather?.destination?.airportCode === selectedPlane.destination
+      ? routeWeather.destination
+      : null;
+  const selectedRouteKey =
+    selectedPlane?.origin && selectedPlane?.destination
+      ? `${selectedPlane.origin}:${selectedPlane.destination}`
+      : null;
+  const weatherLoading =
+    selectedRouteKey != null &&
+    routeWeatherKey !== selectedRouteKey &&
+    routeWeatherErrorKey !== selectedRouteKey;
+
+  useEffect(() => {
+    const originAirportCode = selectedPlane?.origin;
+    const destinationAirportCode = selectedPlane?.destination;
+
+    if (!originAirportCode && !destinationAirportCode) {
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    const params = new URLSearchParams({
+      originAirportCode: originAirportCode ?? "",
+      destinationAirportCode: destinationAirportCode ?? "",
+    });
+
+    fetch(`/api/route-weather?${params.toString()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to load route weather.");
+        }
+
+        return (await response.json()) as RouteWeatherResult;
+      })
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        setRouteWeather(payload);
+        setRouteWeatherKey(`${originAirportCode}:${destinationAirportCode}`);
+        setRouteWeatherErrorKey(null);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setRouteWeather(null);
+        setRouteWeatherKey(null);
+        setRouteWeatherErrorKey(
+          originAirportCode && destinationAirportCode
+            ? `${originAirportCode}:${destinationAirportCode}`
+            : null
+        );
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [selectedPlane?.destination, selectedPlane?.origin]);
 
   const fetchPlanes = useEffectEvent(async (activeBounds: BoundsQuery) => {
     setFetchStatus((current) => (current === "ready" ? "refreshing" : "loading"));
@@ -364,10 +564,22 @@ export default function CalmSkyExplorer() {
         </MapContainer>
       </div>
 
+      {selectedPlane ? (
+        <button
+          type="button"
+          aria-label="Close flight details"
+          className="fixed inset-0 z-[490] cursor-default bg-transparent"
+          onClick={closeSelectedPlane}
+        />
+      ) : null}
+
       <section className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] mx-auto w-full max-w-screen-sm px-4 pb-4">
         <div className="pointer-events-auto space-y-3">
           {selectedPlane ? (
-            <article className="sheet-enter rounded-[2rem] border border-white/84 bg-white/94 p-5 shadow-[0_18px_42px_rgba(103,131,175,0.16)] md:bg-white/86 md:backdrop-blur-xl">
+            <article
+              className="sheet-enter rounded-[2rem] border border-white/84 bg-white/94 p-5 shadow-[0_18px_42px_rgba(103,131,175,0.16)] md:bg-white/86 md:backdrop-blur-xl"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-sky-700">
@@ -382,7 +594,7 @@ export default function CalmSkyExplorer() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedPlaneId(null)}
+                  onClick={closeSelectedPlane}
                   className="rounded-full bg-slate-100/90 px-3 py-1 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200/90"
                 >
                   Close
@@ -390,12 +602,26 @@ export default function CalmSkyExplorer() {
               </div>
 
               {selectedPlane.origin && selectedPlane.destination ? (
-                <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">
-                  <span>{getAirportName(selectedPlane.origin)}</span>
-                  <span className="text-lg">({selectedPlane.origin})</span>
-                  <span className="text-slate-300">→</span>
-                  <span>{getAirportName(selectedPlane.destination)}</span>
-                  <span className="text-lg">({selectedPlane.destination})</span>
+                <div className="mt-4 grid gap-3">
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span>{getAirportName(selectedPlane.origin)}</span>
+                    <span className="text-lg">({selectedPlane.origin})</span>
+                    <span className="text-slate-300">→</span>
+                    <span>{getAirportName(selectedPlane.destination)}</span>
+                    <span className="text-lg">({selectedPlane.destination})</span>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <WeatherRow
+                      label="Origin weather"
+                      airport={originWeather}
+                      loading={weatherLoading}
+                    />
+                    <WeatherRow
+                      label="Destination weather"
+                      airport={destinationWeather}
+                      loading={weatherLoading}
+                    />
+                  </div>
                 </div>
               ) : null}
 
