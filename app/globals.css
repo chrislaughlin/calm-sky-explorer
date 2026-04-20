@@ -1,26 +1,353 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(0.992 0.008 213);
+  --foreground: oklch(0.26 0.036 238);
+  --surface: oklch(0.985 0.01 219 / 0.82);
+  --surface-strong: oklch(0.988 0.009 214 / 0.92);
+  --surface-border: oklch(0.91 0.025 225 / 0.7);
+  --sky-accent: oklch(0.72 0.104 222);
+  --sky-accent-soft: oklch(0.83 0.05 210);
+  --sun-accent: oklch(0.87 0.05 86);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Avenir Next Rounded", "SF Pro Rounded", "Segoe UI", ui-rounded, system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(circle at top, oklch(0.93 0.05 224) 0%, transparent 34%),
+    linear-gradient(180deg, oklch(0.99 0.008 213) 0%, oklch(0.97 0.014 220) 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Avenir Next Rounded", "SF Pro Rounded", "Segoe UI", ui-rounded, system-ui, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-image-layer,
+.leaflet-layer,
+.leaflet-zoom-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x pan-y pinch-zoom;
+  background:
+    radial-gradient(circle at top, oklch(0.95 0.05 221), transparent 26%),
+    linear-gradient(180deg, oklch(0.985 0.008 216), oklch(0.96 0.012 220));
+  font-family: "Avenir Next Rounded", "SF Pro Rounded", "Segoe UI", ui-rounded, system-ui, sans-serif;
+}
+
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.leaflet-tile::selection {
+  background: transparent;
+}
+
+.leaflet-container .leaflet-overlay-pane svg {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto;
+  padding: 0;
+}
+
+.leaflet-tile {
+  visibility: hidden;
+}
+
+.leaflet-tile-loaded {
+  visibility: inherit;
+}
+
+.leaflet-pane {
+  z-index: 400;
+}
+
+.leaflet-tile-pane {
+  z-index: 200;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400;
+}
+
+.leaflet-shadow-pane {
+  z-index: 500;
+}
+
+.leaflet-marker-pane {
+  z-index: 600;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 650;
+}
+
+.leaflet-popup-pane {
+  z-index: 700;
+}
+
+.leaflet-map-pane canvas {
+  z-index: 100;
+}
+
+.leaflet-map-pane svg {
+  z-index: 200;
+}
+
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-marker-pane {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.leaflet-top {
+  top: 0;
+}
+
+.leaflet-right {
+  right: 0;
+}
+
+.leaflet-bottom {
+  bottom: 0;
+}
+
+.leaflet-left {
+  left: 0;
+}
+
+.leaflet-control {
+  position: relative;
+  z-index: 800;
+  float: left;
+  clear: both;
+  pointer-events: auto;
+}
+
+.leaflet-control-attribution,
+.leaflet-control {
+  display: none;
+}
+
+.leaflet-right .leaflet-control {
+  float: right;
+}
+
+.leaflet-top .leaflet-control {
+  margin-top: 0.75rem;
+}
+
+.leaflet-bottom .leaflet-control {
+  margin-bottom: 0.75rem;
+}
+
+.leaflet-left .leaflet-control {
+  margin-left: 0.75rem;
+}
+
+.leaflet-right .leaflet-control {
+  margin-right: 0.75rem;
+}
+
+.leaflet-zoom-animated {
+  transform-origin: 0 0;
+}
+
+.leaflet-interactive {
+  cursor: pointer;
+}
+
+.leaflet-grab {
+  cursor: grab;
+}
+
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+  cursor: grabbing;
+}
+
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+  pointer-events: none;
+}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+  pointer-events: auto;
+}
+
+.leaflet-bar {
+  border-radius: 1rem;
+}
+
+.leaflet-bar a {
+  display: block;
+  height: 2rem;
+  width: 2rem;
+  line-height: 2rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  font: 700 18px "SFMono-Regular", "SF Mono", Consolas, Menlo, monospace;
+  text-indent: 1px;
+}
+
+.leaflet-control-attribution,
+.leaflet-control-zoom {
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 1rem !important;
+  background: var(--surface) !important;
+  box-shadow: 0 18px 44px rgba(111, 142, 188, 0.12) !important;
+  backdrop-filter: blur(14px);
+}
+
+.leaflet-control-attribution {
+  padding: 0.2rem 0.55rem !important;
+  color: oklch(0.5 0.03 236) !important;
+}
+
+.leaflet-control-zoom a {
+  color: oklch(0.35 0.03 240) !important;
+  border-bottom-color: var(--surface-border) !important;
+}
+
+.plane-marker {
+  display: flex;
+  height: 2.35rem;
+  width: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, white 74%, var(--sky-accent-soft));
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.96), rgba(246, 250, 255, 0.93) 62%, rgba(233, 242, 252, 0.9));
+  box-shadow:
+    0 14px 30px rgba(99, 125, 159, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transform: translateZ(0);
+  will-change: transform;
+  transition:
+    transform 180ms cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 180ms cubic-bezier(0.25, 1, 0.5, 1),
+    background 180ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.plane-marker--active {
+  transform: translateZ(0) scale(1.11);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.98), rgba(233, 244, 255, 0.96) 55%, rgba(213, 231, 255, 0.96));
+  box-shadow:
+    0 18px 38px rgba(82, 118, 171, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.plane-marker--grounded {
+  opacity: 0.72;
+}
+
+.plane-marker__icon {
+  height: 1.12rem;
+  width: 1.12rem;
+  color: oklch(0.41 0.085 228);
+  transform: rotate(var(--plane-rotation, 0deg));
+  transition: transform 180ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.plane-marker--active .plane-marker__icon {
+  color: oklch(0.34 0.11 232);
+}
+
+.sheet-enter {
+  animation: sheetRise 420ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes sheetRise {
+  from {
+    opacity: 0;
+    translate: 0 20px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plane-marker,
+  .sheet-enter {
+    animation: none;
+  }
+
+  .plane-marker,
+  .plane-marker__icon {
+    transition-duration: 0.01ms;
+  }
 }
