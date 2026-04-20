@@ -1,0 +1,8 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Calm Sky Explorer
+      - generic [ref=e7]:
+        - heading "Finding a softer way to ask where that plane is going." [level=1] [ref=e8]
+        - paragraph [ref=e9]: Loading the map, location prompt, and live aircraft layer.
+  - alert [ref=e13]
