@@ -19,6 +19,8 @@ import {
   type PlaneApiResponse,
   viewportBucketForBounds,
 } from "@/lib/aviation";
+import { getJourneyProgress } from "@/lib/journey-progress";
+import { getAirport } from "@/lib/infer-route/data/airports";
 import type {
   AirportWeatherIcon,
   AirportWeatherSnapshot,
@@ -324,6 +326,35 @@ export default function CalmSkyExplorer() {
   const selectedPlane = useMemo(() => {
     return rankedPlanes.find((plane) => plane.id === selectedPlaneId) ?? null;
   }, [rankedPlanes, selectedPlaneId]);
+  const journeyProgress = useMemo(() => {
+    if (!selectedPlane?.origin || !selectedPlane.destination) {
+      return null;
+    }
+
+    const originAirport = getAirport(selectedPlane.origin);
+    const destinationAirport = getAirport(selectedPlane.destination);
+
+    if (!originAirport || !destinationAirport) {
+      return null;
+    }
+
+    return getJourneyProgress({
+      origin: {
+        code: selectedPlane.origin,
+        lat: originAirport.lat,
+        lon: originAirport.lon,
+      },
+      destination: {
+        code: selectedPlane.destination,
+        lat: destinationAirport.lat,
+        lon: destinationAirport.lon,
+      },
+      currentPosition: {
+        lat: selectedPlane.latitude,
+        lon: selectedPlane.longitude,
+      },
+    });
+  }, [selectedPlane]);
 
   const originWeather =
     selectedPlane?.origin &&
@@ -718,6 +749,17 @@ export default function CalmSkyExplorer() {
                   </dd>
                 </div>
               </dl>
+
+              {journeyProgress ? (
+                <div className="mt-4 space-y-1.5 rounded-[1.3rem] border border-sky-200/70 bg-sky-50/70 p-3 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">
+                    {journeyProgress.summary.progress}
+                  </p>
+                  <p>{journeyProgress.summary.travelled}</p>
+                  <p>{journeyProgress.summary.remaining}</p>
+                  <p>{journeyProgress.summary.walking}</p>
+                </div>
+              ) : null}
             </article>
           ) : null}
 
