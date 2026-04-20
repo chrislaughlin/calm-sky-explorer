@@ -4,7 +4,8 @@ Find the quiet answer to where that plane is headed.
 
 A minimalist real-time aircraft tracking app that displays nearby flights on an interactive map.
 
-![Calm Sky Explorer](screenshot.png)
+<img width="831" height="744" alt="image" src="https://github.com/user-attachments/assets/d1d0ce5b-1e1b-44e9-87ec-7f448674b91d" />
+
 
 ## Features
 
@@ -15,7 +16,7 @@ A minimalist real-time aircraft tracking app that displays nearby flights on an 
 
 ## Tech Stack
 
-- Next.js 15
+- Next.js 16
 - React
 - Leaflet (OpenStreetMap)
 - Vercel
