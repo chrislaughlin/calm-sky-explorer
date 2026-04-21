@@ -37,10 +37,11 @@ const PROVIDER_BACKOFF_MS: Record<FlightDataProvider, number> = {
   adsbfi: 1_000,
 };
 const PROVIDER_FETCH_TIMEOUT_MS: Record<FlightDataProvider, number> = {
-  opensky: 3_500,
-  adsblol: 2_500,
-  adsbfi: 2_500,
+  opensky: 1_800,
+  adsblol: 1_400,
+  adsbfi: 1_400,
 };
+const INITIAL_RESPONSE_BUDGET_MS = 900;
 
 type CacheEntry = {
   data: PlaneApiResponse;
@@ -462,9 +463,40 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const providerResults = await Promise.all(
-    ALL_PROVIDERS.map((provider) => fetchProviderData(provider, viewport))
+  const providerPromises = ALL_PROVIDERS.map((provider) =>
+    fetchProviderData(provider, viewport)
   );
+  const readyResults: ProviderFetchResult[] = [];
+  const pendingProviders = new Set<FlightDataProvider>(ALL_PROVIDERS);
+
+  for (const providerPromise of providerPromises) {
+    void providerPromise.then((result) => {
+      readyResults.push(result);
+      pendingProviders.delete(result.provider);
+    });
+  }
+
+  await Promise.race([
+    Promise.all(providerPromises),
+    new Promise((resolve) => setTimeout(resolve, INITIAL_RESPONSE_BUDGET_MS)),
+  ]);
+
+  const shouldRespondEarly =
+    pendingProviders.size > 0 && readyResults.some((result) => result.planes.length > 0);
+
+  const providerResults = shouldRespondEarly
+    ? [
+        ...readyResults,
+        ...[...pendingProviders].map((provider) => ({
+          provider,
+          planes: [],
+          stale: true,
+          error: `${providerTimeoutMessage(
+            provider
+          )}. Waiting for additional providers in the background.`,
+        })),
+      ]
+    : await Promise.all(providerPromises);
   const mergedPlanes = sortPlanesByFreshness(
     mergePlanes(providerResults.flatMap((result) => result.planes))
   );
