@@ -36,6 +36,11 @@ const PROVIDER_BACKOFF_MS: Record<FlightDataProvider, number> = {
   adsblol: 8_000,
   adsbfi: 1_000,
 };
+const PROVIDER_FETCH_TIMEOUT_MS: Record<FlightDataProvider, number> = {
+  opensky: 3_500,
+  adsblol: 2_500,
+  adsbfi: 2_500,
+};
 
 type CacheEntry = {
   data: PlaneApiResponse;
@@ -235,8 +240,10 @@ async function fetchOpenSkyResponse(bounds: BoundsQuery) {
   url.searchParams.set("lomax", bounds.east.toString());
 
   let accessToken = await getOpenSkyAccessToken();
+  const timeoutSignal = AbortSignal.timeout(PROVIDER_FETCH_TIMEOUT_MS.opensky);
   let response = await fetch(url, {
     cache: "no-store",
+    signal: timeoutSignal,
     headers: accessToken
       ? {
           Authorization: `Bearer ${accessToken}`,
@@ -250,6 +257,7 @@ async function fetchOpenSkyResponse(bounds: BoundsQuery) {
     accessToken = await getOpenSkyAccessToken();
     response = await fetch(url, {
       cache: "no-store",
+      signal: timeoutSignal,
       headers: accessToken
         ? {
             Authorization: `Bearer ${accessToken}`,
@@ -278,6 +286,7 @@ async function fetchProviderResponse(
 
   return fetch(url, {
     cache: "no-store",
+    signal: AbortSignal.timeout(PROVIDER_FETCH_TIMEOUT_MS[provider]),
   });
 }
 
@@ -298,6 +307,17 @@ function describeRateLimitStrategy(provider: FlightDataProvider) {
     case "opensky":
     default:
       return "A live flight feed is temporarily unavailable";
+  }
+}
+
+function providerTimeoutMessage(provider: FlightDataProvider) {
+  switch (provider) {
+    case "opensky":
+      return "OpenSky is responding slowly right now";
+    case "adsblol":
+    case "adsbfi":
+    default:
+      return "A flight feed is responding slowly right now";
   }
 }
 
@@ -372,12 +392,18 @@ async function fetchProviderData(
         error: null,
       } satisfies ProviderFetchResult;
     } catch (error) {
+      const timeoutError =
+        error instanceof DOMException && error.name === "TimeoutError";
+
       return {
         provider,
         planes: cachedEntry?.planes ?? [],
         stale: Boolean(cachedEntry),
-        error:
-          error instanceof Error
+        error: timeoutError
+          ? `${providerTimeoutMessage(
+              provider
+            )}. Showing a recent nearby-flight snapshot when available.`
+          : error instanceof Error
             ? error.message
             : "A live flight feed could not be reached",
       } satisfies ProviderFetchResult;
