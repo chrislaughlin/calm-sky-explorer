@@ -190,13 +190,13 @@ function WeatherRow({
   const icon = airport?.icon ?? "unknown";
 
   return (
-    <div className="rounded-[1.2rem] border border-slate-200/75 bg-white/82 p-3 shadow-[0_10px_24px_rgba(122,150,194,0.08)]">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-[1.05rem] border border-slate-200/75 bg-white/82 p-2.5 shadow-[0_10px_24px_rgba(122,150,194,0.08)] md:rounded-[1.2rem] md:p-3">
+      <div className="flex items-start justify-between gap-2 md:gap-3">
         <div className="min-w-0">
-          <p className="text-[0.66rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-slate-500 md:text-[0.66rem] md:tracking-[0.22em]">
             {label}
           </p>
-          <div className="mt-1 truncate text-sm font-semibold text-slate-900">
+          <div className="mt-1 truncate text-[0.92rem] font-semibold text-slate-900 md:text-sm">
             {loading ? (
               <span className="inline-block h-4 w-36 animate-pulse rounded-full bg-slate-200/80" />
             ) : (
@@ -209,18 +209,18 @@ function WeatherRow({
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1 text-slate-600">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 md:gap-2 md:px-2.5">
           {loading ? (
             <span className="h-4 w-4 animate-pulse rounded-full bg-slate-200/80" />
           ) : (
             <WeatherGlyph icon={icon} />
           )}
-          <span className="text-xs font-medium uppercase tracking-[0.18em]">
+          <span className="text-[0.68rem] font-medium uppercase tracking-[0.15em] md:text-xs md:tracking-[0.18em]">
             {loading ? "..." : icon}
           </span>
         </div>
       </div>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
+      <p className="mt-1.5 text-[0.9rem] leading-5 text-slate-600 md:mt-2 md:text-sm md:leading-6">
         {loading ? (
           <span className="inline-block h-4 w-48 animate-pulse rounded-full bg-slate-200/80" />
         ) : (
@@ -658,40 +658,40 @@ export default function CalmSkyExplorer() {
         <div className="pointer-events-auto space-y-3">
           {selectedPlane ? (
             <article
-              className="sheet-enter rounded-[2rem] border border-white/84 bg-white/94 p-5 shadow-[0_18px_42px_rgba(103,131,175,0.16)] md:bg-white/86 md:backdrop-blur-xl"
+              className="sheet-enter max-h-[78dvh] overflow-y-auto rounded-[1.5rem] border border-white/84 bg-white/94 p-3.5 shadow-[0_18px_42px_rgba(103,131,175,0.16)] md:max-h-none md:rounded-[2rem] md:bg-white/86 md:p-5 md:backdrop-blur-xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-3 md:gap-4">
                 <div>
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-sky-700">
+                  <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-sky-700 md:text-[0.68rem] md:tracking-[0.24em]">
                     Where are they going?
                   </p>
-                  <h2 className="mt-2 text-[1.85rem] font-semibold tracking-tight text-slate-950">
+                  <h2 className="mt-1 text-[1.45rem] font-semibold tracking-tight text-slate-950 md:mt-2 md:text-[1.85rem]">
                     {selectedPlane.displayCallsign}
                   </h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                  <p className="mt-1 text-[0.82rem] leading-5 text-slate-600 md:text-sm md:leading-6">
                     {formatAirlineLabel(selectedPlane)}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={closeSelectedPlane}
-                  className="rounded-full bg-slate-100/90 px-3 py-1 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200/90"
+                  className="rounded-full bg-slate-100/90 px-2.5 py-0.5 text-[0.8rem] font-medium text-slate-600 transition-colors hover:bg-slate-200/90 md:px-3 md:py-1 md:text-sm"
                 >
                   Close
                 </button>
               </div>
 
               {selectedPlane.origin && selectedPlane.destination ? (
-                <div className="mt-4 grid gap-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                <div className="mt-3 grid gap-2.5 md:mt-4 md:gap-3">
+                  <div className="flex items-center gap-1.5 text-[0.78rem] text-slate-400 md:gap-2 md:text-sm">
                     <span>{getAirportName(selectedPlane.origin)}</span>
-                    <span className="text-lg">({selectedPlane.origin})</span>
+                    <span className="text-base md:text-lg">({selectedPlane.origin})</span>
                     <span className="text-slate-300">→</span>
                     <span>{getAirportName(selectedPlane.destination)}</span>
-                    <span className="text-lg">({selectedPlane.destination})</span>
+                    <span className="text-base md:text-lg">({selectedPlane.destination})</span>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-2 md:gap-3 md:grid-cols-2">
                     <WeatherRow
                       label="Origin weather"
                       airport={originWeather}
@@ -706,12 +706,12 @@ export default function CalmSkyExplorer() {
                 </div>
               ) : null}
 
-              <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-[1.3rem] border border-slate-200/70 bg-slate-50/70 p-3">
-                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <dl className="mt-3.5 grid grid-cols-2 gap-2 text-sm md:mt-5 md:gap-3">
+                <div className="rounded-[1rem] border border-slate-200/70 bg-slate-50/70 p-2.5 md:rounded-[1.3rem] md:p-3">
+                  <dt className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-slate-500 md:text-[0.68rem] md:tracking-[0.2em]">
                     Distance
                   </dt>
-                  <dd className="mt-2 text-base font-semibold text-slate-900">
+                  <dd className="mt-1.5 text-[1.05rem] font-semibold leading-tight text-slate-900 md:mt-2 md:text-base md:leading-normal">
                     {formatDistanceKm(
                       haversineKm(
                         center.lat,
@@ -722,27 +722,27 @@ export default function CalmSkyExplorer() {
                     )}
                   </dd>
                 </div>
-                <div className="rounded-[1.3rem] border border-slate-200/70 bg-slate-50/70 p-3">
-                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="rounded-[1rem] border border-slate-200/70 bg-slate-50/70 p-2.5 md:rounded-[1.3rem] md:p-3">
+                  <dt className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-slate-500 md:text-[0.68rem] md:tracking-[0.2em]">
                     Altitude
                   </dt>
-                  <dd className="mt-2 text-base font-semibold text-slate-900">
+                  <dd className="mt-1.5 text-[1.05rem] font-semibold leading-tight text-slate-900 md:mt-2 md:text-base md:leading-normal">
                     {formatAltitude(selectedPlane)}
                   </dd>
                 </div>
-                <div className="rounded-[1.3rem] border border-slate-200/70 bg-slate-50/70 p-3">
-                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="rounded-[1rem] border border-slate-200/70 bg-slate-50/70 p-2.5 md:rounded-[1.3rem] md:p-3">
+                  <dt className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-slate-500 md:text-[0.68rem] md:tracking-[0.2em]">
                     Speed
                   </dt>
-                  <dd className="mt-2 text-base font-semibold text-slate-900">
+                  <dd className="mt-1.5 text-[1.05rem] font-semibold leading-tight text-slate-900 md:mt-2 md:text-base md:leading-normal">
                     {formatSpeed(selectedPlane)}
                   </dd>
                 </div>
-                <div className="rounded-[1.3rem] border border-slate-200/70 bg-slate-50/70 p-3">
-                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="rounded-[1rem] border border-slate-200/70 bg-slate-50/70 p-2.5 md:rounded-[1.3rem] md:p-3">
+                  <dt className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-slate-500 md:text-[0.68rem] md:tracking-[0.2em]">
                     Last contact
                   </dt>
-                  <dd className="mt-2 text-base font-semibold text-slate-900">
+                  <dd className="mt-1.5 text-[1.05rem] font-semibold leading-tight text-slate-900 md:mt-2 md:text-base md:leading-normal">
                     {selectedPlane.lastContact
                       ? formatRelativeTime(selectedPlane.lastContact * 1000)
                       : "Just now"}
@@ -751,8 +751,8 @@ export default function CalmSkyExplorer() {
               </dl>
 
               {journeyProgress ? (
-                <div className="mt-4 space-y-1.5 rounded-[1.3rem] border border-sky-200/70 bg-sky-50/70 p-3 text-sm text-slate-700">
-                  <p className="font-semibold text-slate-900">
+                <div className="mt-3 space-y-0.5 rounded-[1rem] border border-sky-200/70 bg-sky-50/70 p-2.5 text-[0.9rem] leading-5 text-slate-700 md:mt-4 md:space-y-1.5 md:rounded-[1.3rem] md:p-3 md:text-sm md:leading-6">
+                  <p className="font-semibold text-slate-900 md:text-base">
                     {journeyProgress.summary.progress}
                   </p>
                   <p>{journeyProgress.summary.travelled}</p>
