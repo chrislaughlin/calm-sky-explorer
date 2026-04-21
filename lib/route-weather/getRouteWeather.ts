@@ -16,6 +16,8 @@ function normalizeAirportSnapshot(
     name: airport?.name ?? null,
     lat: airport?.lat ?? null,
     lon: airport?.lon ?? null,
+    localTime: weather?.localTime ?? null,
+    timeZoneAbbr: weather?.timeZoneAbbr ?? null,
     temperatureC: weather?.temperatureC ?? null,
     weatherCode: weather?.weatherCode ?? null,
     windSpeedKph: weather?.windSpeedKph ?? null,
@@ -74,6 +76,8 @@ export async function getRouteWeather(input: {
         resolved.map((entry, index) => [
           entry.airportCode,
           snapshotWeatherReading(fetched[index] ?? {
+            localTime: null,
+            timeZoneAbbr: null,
             temperatureC: null,
             weatherCode: null,
             windSpeedKph: null,
@@ -108,4 +112,3 @@ export async function getRouteWeather(input: {
     destination,
   };
 }
-

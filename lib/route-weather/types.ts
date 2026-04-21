@@ -15,6 +15,8 @@ export type AirportWeatherSnapshot = {
   name: string | null;
   lat: number | null;
   lon: number | null;
+  localTime: string | null;
+  timeZoneAbbr: string | null;
   temperatureC: number | null;
   weatherCode: number | null;
   windSpeedKph: number | null;
@@ -35,8 +37,9 @@ export type WeatherPoint = {
 };
 
 export type WeatherReading = {
+  localTime: string | null;
+  timeZoneAbbr: string | null;
   temperatureC: number | null;
   weatherCode: number | null;
   windSpeedKph: number | null;
 };
-
