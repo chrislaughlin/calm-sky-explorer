@@ -119,6 +119,19 @@ function formatSpeed(plane: Plane) {
   return `${plane.speedKts.toLocaleString()} kt`;
 }
 
+function formatAirportLocalTime(airport: AirportWeatherSnapshot | null) {
+  if (!airport?.localTime) {
+    return "Local time unavailable";
+  }
+
+  const hhmm = airport.localTime.split("T")[1]?.slice(0, 5);
+  if (!hhmm) {
+    return "Local time unavailable";
+  }
+
+  return airport.timeZoneAbbr ? `${hhmm} ${airport.timeZoneAbbr}` : hhmm;
+}
+
 function WeatherGlyph({ icon }: { icon: AirportWeatherIcon }) {
   switch (icon) {
     case "sun":
@@ -208,6 +221,13 @@ function WeatherRow({
               </span>
             )}
           </div>
+          <p className="mt-1 text-[0.72rem] text-slate-500 md:text-xs">
+            {loading ? (
+              <span className="inline-block h-3 w-24 animate-pulse rounded-full bg-slate-200/80" />
+            ) : (
+              `Local time: ${formatAirportLocalTime(airport)}`
+            )}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 md:gap-2 md:px-2.5">
           {loading ? (
